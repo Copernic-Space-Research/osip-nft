@@ -1,10 +1,10 @@
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers";
-import { deployAssetFixture } from "./asset-factory.fixture";
+import { deployAssetFactoryFixture } from "./asset-factory.fixture";
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import { getAssetAddress } from "../../utils/getAsssetAddress";
 import { Asset } from "../../typechain-types";
-import { AddressLike, BigNumberish, BytesLike, Signer } from "ethers";
+import { Signer } from "ethers";
 
 describe("os-nft/asset-deploy", () => {
   const asset = {
@@ -23,8 +23,7 @@ describe("os-nft/asset-deploy", () => {
 
   let assetContract: Asset;
   it("user can create osip-nft asset via factory", async () => {
-    const [, user, anotherUser] = await ethers.getSigners();
-    const { factory } = await loadFixture(deployAssetFixture);
+    const { factory } = await loadFixture(deployAssetFactoryFixture);
     const tx = await factory
       .connect(user)
       .create(
@@ -39,22 +38,24 @@ describe("os-nft/asset-deploy", () => {
     const address = getAssetAddress(receipt);
     if (!address) throw new Error("no address");
     expect(receipt?.status).to.equal(1);
+    // assign var to deployed contract to interact in next tests
     assetContract = await ethers.getContractAt("Asset", address);
   });
 
   it("user can transfer to another user", async () => {
+    const id = 0; // factory creates new contract with first token minted, it has id 0
     const fromAddress = await user.getAddress();
     const toAddress = await anotherUser.getAddress();
-    const args: [
-      AddressLike,
-      AddressLike,
-      BigNumberish,
-      BigNumberish,
-      BytesLike
-    ] = [fromAddress, toAddress, 0, 1, "0x"];
-    const tx = await assetContract.connect(user).safeTransferFrom(...args);
+    const balanceBefore = await assetContract.balanceOf(toAddress, id);
 
-    const balanceAfter = await assetContract.balanceOf(toAddress, 0);
+    await assetContract
+      .connect(user)
+      .safeTransferFrom(fromAddress, toAddress, 0, 1, "0x");
+
+    const balanceAfter = await assetContract.balanceOf(toAddress, id);
+    expect(balanceBefore).not.to.be.eq(balanceAfter);
     expect(balanceAfter).to.equal(1);
   });
-});
+
+  // @TODO use InstantListing contract for easy sell and buy
+  // it("user can sell token", async () => {});

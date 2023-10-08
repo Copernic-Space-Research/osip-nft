@@ -17,7 +17,9 @@ contract Asset is
 {
     mapping(address => bool) private createChildAllowance;
 
-    constructor(string memory uri) ERC1155(uri) {}
+    // set uri in ERC1155 to empty as 'uri()' is overriden
+    // by 'ERC1155URIStorage.sol' extension
+    constructor() ERC1155("") {}
 
     uint256 private id;
 

@@ -1,9 +1,9 @@
 import { ethers } from "hardhat";
 
-export const deployAssetFixture = async () => {
+export const deployAssetFactoryFixture = async () => {
   const assetLogic = await ethers
     .getContractFactory("Asset")
-    .then((factory) => factory.deploy("ipfs://"));
+    .then((factory) => factory.deploy());
 
   const assetLogicAddress = await assetLogic.getAddress();
 
